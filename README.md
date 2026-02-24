@@ -27,6 +27,7 @@ cd E-Commerce
 
 ```
 ### 2. Create Virtual Environment and activate
+```bash
 python -m venv venv
 source venv/bin/activate   # On Linux/Mac
 venv\Scripts\activate      # On Windows
@@ -34,6 +35,13 @@ venv\Scripts\activate      # On Windows
 ```
 
 ### 3.  Install Dependencies
-
+```bash
 pip install -r requirements.txt
 
+```
+### 4. Apply Migrations
+
+```bash
+
+python manage.py makemigrations
+python manage.py migrate
