@@ -14,8 +14,6 @@ This project is inspired by marketplaces like Daraz, with support for **vendors*
 
 ---
 
-
-
 ---
 
 ## ⚙️ Installation & Setup
@@ -45,3 +43,15 @@ pip install -r requirements.txt
 
 python manage.py makemigrations
 python manage.py migrate
+
+```
+
+### 5.Create Superuser(Admin)
+```bash
+python manage.py createsuperuser
+
+```
+### 6.Run Development Server
+```bash
+python manage.py runserver
+
