@@ -15,3 +15,30 @@ This project is inspired by marketplaces like Daraz, with support for **vendors*
 ---
 
 ## 📂 Project Structure
+ecommerce/
+│
+├── ecommerce/        # Project settings
+├── products/         # Product catalog (models, views, serializers, urls)
+├── users/            # Custom user model with roles
+├── orders/           # (Upcoming) Cart, checkout, payments
+└── manage.py
+
+
+
+---
+
+## ⚙️ Installation & Setup
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/sameer9860/E-Commerce.git
+cd E-Commerce
+
+```
+### Create Virtual Environment
+python -m venv venv
+source venv/bin/activate   # On Linux/Mac
+venv\Scripts\activate      # On Windows
+
+pip install -r requirements.txt
+
