@@ -6,6 +6,8 @@ from .serializers import ProductSerializer
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    permission_classes = [permissions.IsAuthenticated]  # Require login
+
 
     def perform_create(self, serializer):
         user = self.request.user
