@@ -1,11 +1,11 @@
 from rest_framework import viewsets, permissions
 from rest_framework.exceptions import PermissionDenied
 from .models import Order, Cart, CartItem, Payment
-from .serializers import OrderSerializer, CartSerializer, CartItemSerializer, PaymentSerializer
+from .serializers import OrderSerializer, CartSerializer, CartItemSerializer
 from django.conf import settings
 from django.shortcuts import redirect
-import requests
 from rest_framework.response import Response
+import requests
 
 
 
@@ -62,9 +62,14 @@ class CartItemViewSet(viewsets.ModelViewSet):
 
 def initiate_esewa_payment(request, order_id):
     order = Order.objects.get(id=order_id)
+    
     amount = sum(item.product.price * item.quantity for item in order.items.all())
 
     payment = Payment.objects.create(order=order, amount=amount)
+
+    # Use the payment variable here
+    # For example, you can save it to the database or perform some other action with it
+    payment.save()
 
     esewa_url = "https://uat.esewa.com.np/epay/main"
     params = {
