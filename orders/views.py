@@ -3,16 +3,32 @@ from rest_framework.exceptions import PermissionDenied
 from .models import Order, Cart, CartItem
 from .serializers import OrderSerializer, CartSerializer, CartItemSerializer
 
+
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        # Customers only see their own orders
+        if user.role == "customer":
+            return Order.objects.filter(customer=user)
+        # Vendors/Admins see all orders
+        return Order.objects.all()
 
     def perform_create(self, serializer):
         user = self.request.user
         if user.role != "customer":
             raise PermissionDenied("Only customers can place orders.")
         serializer.save(customer=user)
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        # Only vendors/admins can update status
+        if user.role == "customer":
+            raise PermissionDenied("Customers cannot update order status.")
+        serializer.save()
 
 
 
