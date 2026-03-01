@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Order, Cart, CartItem
+from .models import Order, Cart, CartItem, Payment
 
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,3 +18,10 @@ class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
         fields = ["id", "customer", "items", "created_at"]
+
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ["id", "order", "amount", "status", "esewa_transaction_id"]
