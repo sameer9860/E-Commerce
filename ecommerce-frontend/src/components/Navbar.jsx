@@ -1,151 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 
-const navStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700&display=swap');
-
-  .navbar {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: #0a0a0a;
-    border-bottom: 1px solid #222;
-    font-family: 'DM Mono', monospace;
-    padding: 0 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 60px;
-  }
-
-  .navbar-brand {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #f5f0e8;
-    text-decoration: none;
-    letter-spacing: -0.02em;
-  }
-
-  .navbar-brand span {
-    color: #e8c547;
-  }
-
-  .navbar-links {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .navbar-links a {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.85rem;
-    border-radius: 6px;
-    color: #888;
-    text-decoration: none;
-    font-size: 0.78rem;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    transition: color 0.15s, background 0.15s;
-    position: relative;
-  }
-
-  .navbar-links a:hover {
-    color: #f5f0e8;
-    background: #1a1a1a;
-  }
-
-  .navbar-links a.active {
-    color: #e8c547;
-    background: rgba(232, 197, 71, 0.08);
-  }
-
-  .cart-badge {
-    background: #e8c547;
-    color: #0a0a0a;
-    font-size: 0.6rem;
-    font-weight: 700;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .navbar-right {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .btn-login {
-    padding: 0.4rem 1rem;
-    border-radius: 6px;
-    border: 1px solid #333;
-    background: transparent;
-    color: #f5f0e8;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.78rem;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    cursor: pointer;
-    text-decoration: none;
-    transition: border-color 0.15s, background 0.15s;
-  }
-
-  .btn-login:hover {
-    border-color: #e8c547;
-    color: #e8c547;
-  }
-
-  .hamburger {
-    display: none;
-    flex-direction: column;
-    gap: 5px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px;
-  }
-
-  .hamburger span {
-    display: block;
-    width: 22px;
-    height: 1.5px;
-    background: #888;
-    transition: 0.2s;
-  }
-
-  @media (max-width: 640px) {
-    .navbar-links { display: none; }
-    .hamburger { display: flex; }
-    .navbar-links.open {
-      display: flex;
-      flex-direction: column;
-      position: absolute;
-      top: 60px;
-      left: 0; right: 0;
-      background: #0a0a0a;
-      border-bottom: 1px solid #222;
-      padding: 0.75rem 1rem;
-      gap: 0.25rem;
-    }
-  }
-`;
-
 const NAV_LINKS = [
-  { to: "/", label: "Home", icon: "⌂" },
-  { to: "/products", label: "Products", icon: "◈" },
-  { to: "/cart", label: "Cart", icon: "◻", badge: 2 },
-  { to: "/checkout", label: "Checkout", icon: "→" },
+  { to: "/", label: "Home" },
+  { to: "/products", label: "Products" },
+  { to: "/cart", label: "Cart", badge: 2 },
+  { to: "/checkout", label: "Checkout" },
+  { to: "/login", label: "Login" },
+  { to: "/vendor", label: "Vendor Dashboard" },
 ];
 
 export default function Navbar() {
@@ -153,38 +15,91 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <>
-      <style>{navStyles}</style>
-      <nav className="navbar">
-        <Link to="/" className="navbar-brand">
-          shop<span>.</span>
-        </Link>
-
-        <ul className={`navbar-links${open ? " open" : ""}`}>
-          {NAV_LINKS.map(({ to, label, icon, badge }) => (
-            <li key={to}>
-              <Link
-                to={to}
-                className={location.pathname === to ? "active" : ""}
-                onClick={() => setOpen(false)}
-              >
-                <span>{icon}</span>
-                {label}
-                {badge ? <span className="cart-badge">{badge}</span> : null}
-              </Link>
-            </li>
-          ))}
-        </ul>
-
-        <div className="navbar-right">
-          <Link to="/login" className="btn-login">
+    <nav className="fixed top-0 left-0 w-full bg-white shadow-md z-50">
+      {/* Top Bar for small links (Optional, like Daraz) */}
+      <div className="bg-[#f5f5f5] text-xs py-1 px-10 hidden md:block">
+        <div className="max-w-7xl mx-auto flex justify-end space-x-6 text-gray-600">
+          <Link to="/vendor" className="hover:text-[#f85606]">
+            Vendor Dashboard
+          </Link>
+          <Link to="/login" className="hover:text-[#f85606]">
             Login
           </Link>
-          <button className="hamburger" onClick={() => setOpen((o) => !o)} aria-label="Menu">
-            <span /><span /><span />
+          <Link to="/signup" className="hover:text-[#f85606]">
+            Sign Up
+          </Link>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center py-4 px-6 md:px-10 gap-4">
+        {/* Brand */}
+        <div className="flex justify-between items-center w-full md:w-auto">
+          <Link
+            to="/"
+            className="text-3xl font-extrabold text-[#f85606] tracking-tighter"
+          >
+            SHOP<span className="text-gray-900">ORA</span>
+          </Link>
+          {/* Mobile Hamburger */}
+          <button
+            onClick={() => setOpen(!open)}
+            className="md:hidden focus:outline-none p-2 rounded hover:bg-gray-100 transition"
+          >
+            <div className="w-6 h-0.5 bg-gray-600 mb-1"></div>
+            <div className="w-6 h-0.5 bg-gray-600 mb-1"></div>
+            <div className="w-6 h-0.5 bg-gray-600"></div>
           </button>
         </div>
-      </nav>
-    </>
+
+        {/* Search Bar */}
+        <div className="flex-grow w-full max-w-2xl flex">
+          <input
+            type="text"
+            placeholder="Search in Shopora"
+            className="w-full bg-[#eff0f5] px-4 py-2 rounded-l-md outline-none focus:ring-1 focus:ring-[#f85606]"
+          />
+          <button className="bg-[#f85606] text-white px-6 py-2 rounded-r-md hover:bg-[#d04a05] transition font-bold">
+            SEARCH
+          </button>
+        </div>
+
+        {/* Action Links */}
+        <div className="hidden md:flex items-center space-x-8">
+          <Link
+            to="/cart"
+            className="relative text-gray-700 hover:text-[#f85606] flex items-center gap-1 transition"
+          >
+            <span className="text-2xl">🛒</span>
+            <span className="font-medium">Cart</span>
+            <span className="absolute -top-2 -right-4 bg-[#f85606] text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
+              2
+            </span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {open && (
+        <div className="md:hidden bg-white border-t border-gray-100 flex flex-col space-y-4 px-6 py-4 shadow-lg">
+          {NAV_LINKS.map(({ to, label, badge }) => (
+            <Link
+              key={to}
+              to={to}
+              onClick={() => setOpen(false)}
+              className={`relative font-medium transition-colors hover:text-[#f85606] ${
+                location.pathname === to ? "text-[#f85606]" : "text-gray-700"
+              }`}
+            >
+              {label}
+              {badge && (
+                <span className="ml-2 bg-[#f85606] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {badge}
+                </span>
+              )}
+            </Link>
+          ))}
+        </div>
+      )}
+    </nav>
   );
 }
