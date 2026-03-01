@@ -20,7 +20,7 @@ export default function Login() {
       <div className="bg-white rounded-xl shadow-lg p-10 w-full max-w-lg space-y-6">
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold text-gray-800">
-            Welcome to DarazClone! Please login.
+            Welcome to Shopora! Please login.
           </h2>
           <p className="text-sm text-gray-500">
             New member?{" "}
