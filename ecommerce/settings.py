@@ -126,3 +126,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+
+
+
+ESEWA_MERCHANT_ID = "epaytest"   # test merchant ID
+ESEWA_SUCCESS_URL = "http://127.0.0.1:8000/api/payment/success/"
+ESEWA_FAILURE_URL = "http://127.0.0.1:8000/api/payment/failure/"
+ESEWA_VERIFY_URL = "https://uat.esewa.com.np/epay/transrec"  # test verification URL
