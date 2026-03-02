@@ -48,10 +48,10 @@ button:hover {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #f85606;
+  background: #0a4692;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #d04a05;
+  background: #0a4692;
 }
