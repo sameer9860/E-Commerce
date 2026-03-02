@@ -15,9 +15,9 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 w-full bg-[#f85606] shadow-md z-50">
+    <nav className="fixed top-0 left-0 w-full bg-[#0a4692] shadow-md z-50">
       {/* Top Bar for small links */}
-      <div className="text-[10px] py-1 px-10 hidden md:block">
+      <div className="text-[13px] py-1 px-10 hidden md:block">
         <div className="max-w-7xl mx-auto flex justify-end space-x-6 text-white uppercase font-medium">
           <span className="hover:underline cursor-pointer">
             Save More on App
