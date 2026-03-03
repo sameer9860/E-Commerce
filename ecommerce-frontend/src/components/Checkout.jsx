@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useParams } from "react-router-dom";
 import API from "../api";
 
-export default function Checkout({ orderId, orderItems = [], total = "0.00" }) {
+export default function Checkout({ orderItems = [], total = "0.00" }) {
+  const { orderId } = useParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
