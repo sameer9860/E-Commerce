@@ -1,12 +1,35 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import API from "../api";
 
 export default function ProductList() {
   const [products, setProducts] = useState([]);
+  const [addingId, setAddingId] = useState(null);
 
   useEffect(() => {
     API.get("products/").then((res) => setProducts(res.data));
   }, []);
+
+  const ensureCartExists = async () => {
+    try {
+      await API.post("carts/", {});
+    } catch {
+      // cart may already exist; ignore errors here
+    }
+  };
+
+  const handleAddToCart = async (productId) => {
+    setAddingId(productId);
+    await ensureCartExists();
+    try {
+      await API.post("cart-items/", { product: productId, quantity: 1 });
+      alert("Added to cart");
+    } catch {
+      alert("Could not add to cart. Make sure you are logged in as a customer.");
+    } finally {
+      setAddingId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#eff0f5] p-6 flex flex-col items-center">
@@ -19,27 +42,30 @@ export default function ProductList() {
           {products.map((p) => (
             <li
               key={p.id}
-              className="bg-white text-gray-900 overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group"
+              className="bg-white text-gray-900 overflow-hidden hover:shadow-xl transition-shadow group"
             >
-              {/* Product Image Placeholder */}
-              <div className="h-48 bg-gray-100 flex items-center justify-center p-4">
-                <span className="text-4xl group-hover:scale-110 transition-transform">
-                  📦
-                </span>
-              </div>
+              <Link to={`/products/${p.id}`}>
+                <div className="h-48 bg-gray-100 flex items-center justify-center p-4">
+                  <span className="text-4xl group-hover:scale-110 transition-transform">
+                    📦
+                  </span>
+                </div>
+              </Link>
 
-              <div className="p-3 flex flex-col h-32 justify-between">
+              <div className="p-3 flex flex-col h-40 justify-between">
                 <div>
-                  <h3 className="text-sm line-clamp-2 leading-tight hover:text-[#f85606] transition-colors">
-                    {p.name}
-                  </h3>
+                  <Link to={`/products/${p.id}`}>
+                    <h3 className="text-sm line-clamp-2 leading-tight hover:text-[#f85606] transition-colors">
+                      {p.name}
+                    </h3>
+                  </Link>
                   <div className="mt-1 flex items-center gap-1">
                     <span className="text-xs text-yellow-500">★★★★★</span>
                     <span className="text-[10px] text-gray-400">(0)</span>
                   </div>
                 </div>
 
-                <div className="mt-auto">
+                <div className="mt-auto space-y-1">
                   <div className="text-lg font-bold text-[#f85606]">
                     Rs. {p.price}
                   </div>
@@ -49,6 +75,13 @@ export default function ProductList() {
                     </span>
                     <span className="text-[10px] text-gray-700">-20%</span>
                   </div>
+                  <button
+                    onClick={() => handleAddToCart(p.id)}
+                    disabled={addingId === p.id}
+                    className="mt-1 w-full bg-[#f85606] text-white text-xs font-semibold py-1.5 rounded hover:bg-[#d04a05] transition-colors"
+                  >
+                    {addingId === p.id ? "Adding..." : "Add to Cart"}
+                  </button>
                 </div>
               </div>
             </li>
@@ -58,3 +91,4 @@ export default function ProductList() {
     </div>
   );
 }
+
