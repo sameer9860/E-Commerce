@@ -1,18 +1,55 @@
-import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
-
-const NAV_LINKS = [
-  { to: "/", label: "Home" },
-  { to: "/products", label: "Products" },
-  { to: "/cart", label: "Cart" },
-  { to: "/customer", label: "My Orders" },
-  { to: "/login", label: "Login" },
-  { to: "/vendor", label: "Vendor Dashboard" },
-];
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import API from "../api";
 
 export default function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [me, setMe] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setMe(null);
+      return;
+    }
+    API.get("me/")
+      .then((res) => setMe(res.data))
+      .catch(() => setMe(null));
+  }, [location.pathname]);
+
+  const navLinks = useMemo(() => {
+    const base = [
+      { to: "/", label: "Home" },
+      { to: "/products", label: "Products" },
+    ];
+
+    if (!me) {
+      return [
+        ...base,
+        { to: "/login", label: "Customer Login" },
+        { to: "/vendor-login", label: "Vendor Login" },
+        { to: "/register", label: "Sign Up" },
+      ];
+    }
+
+    const authLinks = [{ to: "/profile", label: "Profile" }];
+
+    if (me.is_staff || me.is_superuser) {
+      return [...base, { to: "/admin-dashboard", label: "Admin Dashboard" }, ...authLinks];
+    }
+    if (me.role === "vendor") {
+      return [...base, { to: "/vendor", label: "Vendor Dashboard" }, ...authLinks];
+    }
+    return [...base, { to: "/cart", label: "Cart" }, { to: "/customer", label: "My Orders" }, ...authLinks];
+  }, [me]);
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    setMe(null);
+    navigate("/login");
+  };
 
   return (
     <nav className="fixed top-0 left-0 w-full bg-[#0a4692] shadow-md z-50">
@@ -22,16 +59,19 @@ export default function Navbar() {
           <span className="hover:underline cursor-pointer">
             Save More on App
           </span>
-          <Link to="/vendor" className="hover:underline">
-            Vendor Dashboard
-          </Link>
           <span className="hover:underline cursor-pointer">Help & Support</span>
-          <Link to="/login" className="hover:underline">
-            Login
-          </Link>
-          <Link to="/register" className="hover:underline">
-            Sign Up
-          </Link>
+          {!me ? (
+            <>
+              <Link to="/login" className="hover:underline">Customer Login</Link>
+              <Link to="/vendor-login" className="hover:underline">Vendor Login</Link>
+              <Link to="/register" className="hover:underline">Sign Up</Link>
+            </>
+          ) : (
+            <>
+              <Link to="/profile" className="hover:underline">Profile</Link>
+              <button onClick={logout} className="hover:underline">Logout</button>
+            </>
+          )}
         </div>
       </div>
 
@@ -69,22 +109,21 @@ export default function Navbar() {
 
         {/* Action Links */}
         <div className="hidden md:flex items-center space-x-8">
-          <Link
-            to="/cart"
-            className="relative text-white hover:opacity-80 flex items-center transition"
-          >
-            <span className="text-3xl">🛒</span>
-            <span className="absolute -top-1 -right-3 bg-white text-[#f85606] text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-[#f85606]">
-              2
-            </span>
-          </Link>
+          {me?.role === "customer" && (
+            <Link
+              to="/cart"
+              className="relative text-white hover:opacity-80 flex items-center transition"
+            >
+              <span className="text-3xl">🛒</span>
+            </Link>
+          )}
         </div>
       </div>
 
       {/* Mobile Menu */}
       {open && (
         <div className="md:hidden bg-[#f85606] border-t border-[#d04a05] flex flex-col space-y-4 px-6 py-4 shadow-lg text-white">
-          {NAV_LINKS.map(({ to, label, badge }) => (
+          {navLinks.map(({ to, label }) => (
             <Link
               key={to}
               to={to}
@@ -94,13 +133,19 @@ export default function Navbar() {
               }`}
             >
               {label}
-              {badge && (
-                <span className="ml-2 bg-white text-[#f85606] text-xs font-bold px-2 py-0.5 rounded-full">
-                  {badge}
-                </span>
-              )}
             </Link>
           ))}
+          {me && (
+            <button
+              onClick={() => {
+                setOpen(false);
+                logout();
+              }}
+              className="text-left font-medium hover:opacity-80"
+            >
+              Logout
+            </button>
+          )}
         </div>
       )}
     </nav>
