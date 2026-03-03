@@ -5,20 +5,31 @@ import API from "../api";
 export default function ProductList() {
   const [products, setProducts] = useState([]);
   const [addingId, setAddingId] = useState(null);
+  const [me, setMe] = useState(null);
 
   useEffect(() => {
     API.get("products/").then((res) => setProducts(res.data));
+    API.get("me/")
+      .then((res) => setMe(res.data))
+      .catch(() => setMe(null));
   }, []);
 
   const ensureCartExists = async () => {
     try {
-      await API.post("carts/", {});
+      const res = await API.get("carts/");
+      if (!res.data || res.data.length === 0) {
+        await API.post("carts/", {});
+      }
     } catch {
       // cart may already exist; ignore errors here
     }
   };
 
   const handleAddToCart = async (productId) => {
+    if (!me || me.role !== "customer") {
+      alert("Please login as a customer to add items to cart.");
+      return;
+    }
     setAddingId(productId);
     await ensureCartExists();
     try {
