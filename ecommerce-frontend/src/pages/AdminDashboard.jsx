@@ -190,7 +190,7 @@ export default function AdminDashboard() {
                         <td className="px-4 py-2">{p.order_id ?? p.order}</td>
                         <td className="px-4 py-2">{p.customer_username}</td>
                         <td className="px-4 py-2">{p.product_name}</td>
-                        <td className="px-4 py-2">${p.amount}</td>
+                        <td className="px-4 py-2">Rs. {p.amount}</td>
                         <td className="px-4 py-2">{p.status}</td>
                         <td className="px-4 py-2">{p.esewa_transaction_id || "—"}</td>
                       </tr>

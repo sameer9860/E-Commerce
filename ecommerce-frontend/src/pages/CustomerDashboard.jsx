@@ -10,6 +10,13 @@ export default function CustomerDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("payment") === "success") {
+      alert("Payment successful! Your order has been confirmed.");
+    } else if (params.get("payment") === "failed") {
+      alert("Payment failed. Please try again.");
+    }
+
     const load = async () => {
       try {
         const me = await API.get("me/");
@@ -50,7 +57,9 @@ export default function CustomerDashboard() {
     <div className="min-h-screen bg-[#eff0f5] flex items-center justify-center p-6">
       <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-4xl space-y-4">
         <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">Customer Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Customer Dashboard
+          </h1>
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab("orders")}
@@ -102,9 +111,7 @@ export default function CustomerDashboard() {
                         </td>
                         <td className="px-4 py-2">{o.quantity}</td>
                         <td className="px-4 py-2">{o.status}</td>
-                        <td className="px-4 py-2">
-                          {o.payment_status ?? "—"}
-                        </td>
+                        <td className="px-4 py-2">{o.payment_status ?? "—"}</td>
                         <td className="px-4 py-2">
                           {o.created_at
                             ? new Date(o.created_at).toLocaleString()
@@ -121,7 +128,9 @@ export default function CustomerDashboard() {
 
         {activeTab === "payments" && (
           <>
-            <h2 className="text-lg font-semibold text-gray-900">Payment History</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Payment History
+            </h2>
             {payments.length === 0 ? (
               <p className="text-gray-600">No payments yet.</p>
             ) : (
@@ -141,7 +150,7 @@ export default function CustomerDashboard() {
                       <tr key={p.id} className="border-t">
                         <td className="px-4 py-2">{p.order_id ?? p.order}</td>
                         <td className="px-4 py-2">{p.product_name}</td>
-                        <td className="px-4 py-2">${p.amount}</td>
+                        <td className="px-4 py-2">Rs. {p.amount}</td>
                         <td className="px-4 py-2">{p.status}</td>
                         <td className="px-4 py-2">
                           {p.esewa_transaction_id || "—"}
@@ -158,5 +167,3 @@ export default function CustomerDashboard() {
     </div>
   );
 }
-
-

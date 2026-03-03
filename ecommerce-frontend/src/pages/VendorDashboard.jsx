@@ -168,7 +168,7 @@ export default function VendorDashboard() {
                 <div key={p.id} className="bg-white shadow-md rounded-lg p-4">
                   <h4 className="text-lg font-bold">{p.name}</h4>
                   <p className="text-gray-600">{p.description}</p>
-                  <p className="text-blue-600 font-semibold">${p.price}</p>
+                  <p className="text-blue-600 font-semibold">Rs. {p.price}</p>
                   <p className="text-sm text-gray-500">Stock: {p.stock}</p>
                   <button
                     onClick={() => handleDeleteProduct(p.id)}
@@ -245,7 +245,7 @@ export default function VendorDashboard() {
                   <div className="bg-white rounded-lg shadow p-4">
                     <div className="text-sm text-gray-500">Total revenue</div>
                     <div className="text-2xl font-bold">
-                      ${analytics.total_revenue}
+                      Rs. {analytics.total_revenue}
                     </div>
                   </div>
                   <div className="bg-white rounded-lg shadow p-4">
@@ -275,7 +275,7 @@ export default function VendorDashboard() {
                               <span className="text-gray-800">
                                 {row.order__product__name}
                               </span>
-                              <span className="font-semibold">${row.revenue}</span>
+                              <span className="font-semibold">Rs. {row.revenue}</span>
                             </div>
                             <div className="h-2 bg-gray-200 rounded">
                               <div
