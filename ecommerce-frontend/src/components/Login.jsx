@@ -1,17 +1,31 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
+      setLoading(true);
       const res = await API.post("token/", { username, password });
       localStorage.setItem("token", res.data.access);
+      const me = await API.get("me/");
       alert("Login successful!");
+      if (me.data.is_staff || me.data.is_superuser) {
+        navigate("/admin-dashboard");
+      } else if (me.data.role === "vendor") {
+        navigate("/vendor");
+      } else {
+        navigate("/customer");
+      }
     } catch {
       alert("Login failed. Check credentials.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,9 +76,10 @@ export default function Login() {
 
         <button
           onClick={handleLogin}
+          disabled={loading}
           className="w-full bg-[#f85606] text-white font-bold py-4 rounded hover:bg-[#d04a05] transition-colors shadow-md uppercase tracking-wide"
         >
-          LOGIN
+          {loading ? "LOGGING IN..." : "LOGIN"}
         </button>
       </div>
     </div>
