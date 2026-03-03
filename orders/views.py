@@ -6,7 +6,7 @@ from django.conf import settings
 from django.shortcuts import redirect
 from rest_framework.response import Response
 import requests
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from django.urls import reverse
 from rest_framework.views import APIView
 from django.db.models import Sum, Count
@@ -42,6 +42,13 @@ class OrderViewSet(viewsets.ModelViewSet):
             raise ValidationError("Not enough stock for this product.")
 
         order = serializer.save(customer=user)
+
+        # create payment
+        Payment.objects.create(
+            order=order,
+            amount=order.product.price * qty,
+            status="Success",
+        )
 
         # deduct inventory
         product.stock -= qty
