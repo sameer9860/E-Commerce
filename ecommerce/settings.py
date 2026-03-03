@@ -141,3 +141,5 @@ ESEWA_MERCHANT_CODE = os.getenv("ESEWA_MERCHANT_CODE")
 
 # CORS (allow frontend dev server)
 CORS_ALLOW_ALL_ORIGINS = True
+
+
