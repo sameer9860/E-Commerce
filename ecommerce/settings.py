@@ -9,18 +9,18 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
-
+import os
 from pathlib import Path
-
+from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+load_dotenv()
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--eye+2ko_ko^yav6uk4y_)lod!jc03yxsxdimfu+tx7s)-%_*i'
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'users',
     'orders',
     'rest_framework_simplejwt',
+    'dotenv',
     
 ]
 
@@ -131,8 +132,8 @@ STATIC_URL = 'static/'
 
 
 
-
-ESEWA_BASE_URL= "https://rc.esewa.com.np"
-ESEWA_PAYMENT_URL="https://rc.esewa.com.np/epay/main"
-ESEWA_VERIFY_URL="https://rc.esewa.com.np/epay/transrec"
-ESEWA_MERCHANT_CODE="EPAYTEST"
+# eSewa settings    
+ESEWA_BASE_URL= os.getenv("ESEWA_BASE_URL")
+ESEWA_PAYMENT_URL= os.getenv("ESEWA_PAYMENT_URL")
+ESEWA_VERIFY_URL= os.getenv("ESEWA_VERIFY_URL")
+ESEWA_MERCHANT_CODE= os.getenv("ESEWA_MERCHANT_CODE")
