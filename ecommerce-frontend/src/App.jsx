@@ -8,6 +8,9 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import VendorDashboard from "./pages/VendorDashboard";
 import CustomerDashboard from "./pages/CustomerDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import VendorLogin from "./pages/VendorLogin";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -22,9 +25,12 @@ function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout/:orderId" element={<Checkout />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/vendor-login" element={<VendorLogin />} />
           <Route path="/register" element={<Register />} />
           <Route path="/vendor" element={<VendorDashboard />} />
           <Route path="/customer" element={<CustomerDashboard />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </div>
     </Router>
