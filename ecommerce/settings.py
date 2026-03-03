@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'orders',
     'rest_framework_simplejwt',
     'dotenv',
-    
+    'corsheaders',
 ]
 
 
@@ -51,6 +51,7 @@ REST_FRAMEWORK = { "DEFAULT_AUTHENTICATION_CLASSES": ( "rest_framework_simplejwt
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -133,7 +134,10 @@ STATIC_URL = 'static/'
 
 
 # eSewa settings    
-ESEWA_BASE_URL= os.getenv("ESEWA_BASE_URL")
-ESEWA_PAYMENT_URL= os.getenv("ESEWA_PAYMENT_URL")
-ESEWA_VERIFY_URL= os.getenv("ESEWA_VERIFY_URL")
-ESEWA_MERCHANT_CODE= os.getenv("ESEWA_MERCHANT_CODE")
+ESEWA_BASE_URL = os.getenv("ESEWA_BASE_URL")
+ESEWA_PAYMENT_URL = os.getenv("ESEWA_PAYMENT_URL")
+ESEWA_VERIFY_URL = os.getenv("ESEWA_VERIFY_URL")
+ESEWA_MERCHANT_CODE = os.getenv("ESEWA_MERCHANT_CODE")
+
+# CORS (allow frontend dev server)
+CORS_ALLOW_ALL_ORIGINS = True
