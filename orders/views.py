@@ -6,7 +6,8 @@ from django.conf import settings
 from django.shortcuts import redirect
 from rest_framework.response import Response
 import requests
-
+from django.http import JsonResponse, HttpResponse
+from django.urls import reverse
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -102,9 +103,7 @@ class CartItemViewSet(viewsets.ModelViewSet):
 
 
 
-
 def initiate_esewa_payment(request, order_id):
-    # only authenticated customers can initiate payment
     if not request.user.is_authenticated:
         from django.http import HttpResponseForbidden
         return HttpResponseForbidden("Authentication required")
@@ -119,39 +118,42 @@ def initiate_esewa_payment(request, order_id):
         from django.http import HttpResponseBadRequest
         return HttpResponseBadRequest("Order is not in a payable state")
 
-    # recalc amount from the order itself (single-product model)
     amount = order.product.price * order.quantity
 
-    # create a pending payment record
-    payment = Payment.objects.create(order=order, amount=amount)
-    payment.save()
+    Payment.objects.create(order=order, amount=amount)
 
-    # sandbox endpoint for development (rc.esewa.com.np is the sandbox host)
-    # switch to https://esewa.com.np/epay/main for production
-    esewa_url = "https://rc.esewa.com.np/"
+    # eSewa sandbox payment URL from settings
+    esewa_url = settings.ESEWA_PAYMENT_URL
+
+    # Build absolute success/failure URLs (pointing to your views)
+    success_url = request.build_absolute_uri(reverse("esewa-success"))
+    failure_url = request.build_absolute_uri(reverse("esewa-failure"))
+
     params = {
         "amt": amount,
-        "pid": str(order.id),  # order ID
-        "scd": settings.ESEWA_MERCHANT_ID,
-        "su": settings.ESEWA_SUCCESS_URL,
-        "fu": settings.ESEWA_FAILURE_URL,
+        "pdc": 0,
+        "psc": 0,
+        "txAmt": 0,
+        "tAmt": amount,
+        "pid": str(order.id),
+        "scd": settings.ESEWA_MERCHANT_CODE,  # EPAYTEST in sandbox
+        "su": success_url,
+        "fu": failure_url,
     }
 
     query_string = "&".join([f"{k}={v}" for k, v in params.items()])
     return redirect(f"{esewa_url}?{query_string}")
 
 
-from django.http import JsonResponse, HttpResponse
 
 def esewa_success(request):
-    # eSewa returns pid parameter for the order id when redirecting back
     oid = request.GET.get("pid") or request.GET.get("oid")
     amt = request.GET.get("amt")
     refId = request.GET.get("refId")
 
     data = {
         "amt": amt,
-        "scd": settings.ESEWA_MERCHANT_ID,
+        "scd": settings.ESEWA_MERCHANT_CODE,
         "pid": oid,
         "rid": refId,
     }
@@ -169,6 +171,5 @@ def esewa_success(request):
     else:
         return JsonResponse({"error": "Payment verification failed"}, status=400)
 
-
 def esewa_failure(request):
-    return JsonResponse({"error": "Payment failed"}, status=400)
+    return JsonResponse({"message": "Payment failed"}, status=400)
