@@ -131,7 +131,8 @@ STATIC_URL = 'static/'
 
 
 
-ESEWA_MERCHANT_ID = "epaytest"   # test merchant ID
-ESEWA_SUCCESS_URL = "http://127.0.0.1:8000/api/payment/success/"
-ESEWA_FAILURE_URL = "http://127.0.0.1:8000/api/payment/failure/"
-ESEWA_VERIFY_URL = "https://uat.esewa.com.np/epay/transrec"  # test verification URL
+
+ESEWA_BASE_URL= "https://rc.esewa.com.np"
+ESEWA_PAYMENT_URL="https://rc.esewa.com.np/epay/main"
+ESEWA_VERIFY_URL="https://rc.esewa.com.np/epay/transrec"
+ESEWA_MERCHANT_CODE="EPAYTEST"
