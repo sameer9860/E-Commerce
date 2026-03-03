@@ -26,7 +26,25 @@ class OrderViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.role != "customer":
             raise PermissionDenied("Only customers can place orders.")
-        serializer.save(customer=user)
+        # check stock before saving
+        product = serializer.validated_data.get("product")
+        qty = serializer.validated_data.get("quantity", 1)
+        if product.stock < qty:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("Not enough stock for this product.")
+
+        order = serializer.save(customer=user)
+
+        # deduct inventory
+        product.stock -= qty
+        product.save()
+
+        # optionally clear cart items related to this product
+        try:
+            cart = Cart.objects.get(customer=user)
+            CartItem.objects.filter(cart=cart, product=product).delete()
+        except Cart.DoesNotExist:
+            pass
 
     def perform_update(self, serializer):
         user = self.request.user
@@ -48,6 +66,15 @@ class CartViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Only customers can have carts.")
         serializer.save(customer=user)
 
+    def get_queryset(self):
+        # customers should only see their own cart
+        user = self.request.user
+        if user.role == "customer":
+            return Cart.objects.filter(customer=user)
+        # allow admins to view all carts if desired
+        return Cart.objects.all()
+
+
 class CartItemViewSet(viewsets.ModelViewSet):
     queryset = CartItem.objects.all()
     serializer_class = CartItemSerializer
@@ -55,23 +82,53 @@ class CartItemViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         cart = Cart.objects.get(customer=self.request.user)
+        product = serializer.validated_data.get("product")
+        qty = serializer.validated_data.get("quantity", 1)
+        if product.stock < qty:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("Not enough stock for this product.")
         serializer.save(cart=cart)
-        
-        
-        
+
+    def get_queryset(self):
+        # customers only see items in their own cart
+        user = self.request.user
+        if user.role == "customer":
+            try:
+                cart = Cart.objects.get(customer=user)
+                return CartItem.objects.filter(cart=cart)
+            except Cart.DoesNotExist:
+                return CartItem.objects.none()
+        return CartItem.objects.all()
+
+
+
 
 def initiate_esewa_payment(request, order_id):
-    order = Order.objects.get(id=order_id)
-    
-    amount = sum(item.product.price * item.quantity for item in order.items.all())
+    # only authenticated customers can initiate payment
+    if not request.user.is_authenticated:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Authentication required")
 
+    try:
+        order = Order.objects.get(id=order_id, customer=request.user)
+    except Order.DoesNotExist:
+        from django.http import HttpResponseNotFound
+        return HttpResponseNotFound("Order not found")
+
+    if order.status != "Pending":
+        from django.http import HttpResponseBadRequest
+        return HttpResponseBadRequest("Order is not in a payable state")
+
+    # recalc amount from the order itself (single-product model)
+    amount = order.product.price * order.quantity
+
+    # create a pending payment record
     payment = Payment.objects.create(order=order, amount=amount)
-
-    # Use the payment variable here
-    # For example, you can save it to the database or perform some other action with it
     payment.save()
 
-    esewa_url = "https://uat.esewa.com.np/epay/main"
+    # sandbox endpoint for development (rc.esewa.com.np is the sandbox host)
+    # switch to https://esewa.com.np/epay/main for production
+    esewa_url = "https://rc.esewa.com.np/"
     params = {
         "amt": amount,
         "pid": str(order.id),  # order ID
@@ -83,8 +140,12 @@ def initiate_esewa_payment(request, order_id):
     query_string = "&".join([f"{k}={v}" for k, v in params.items()])
     return redirect(f"{esewa_url}?{query_string}")
 
+
+from django.http import JsonResponse, HttpResponse
+
 def esewa_success(request):
-    oid = request.GET.get("oid")
+    # eSewa returns pid parameter for the order id when redirecting back
+    oid = request.GET.get("pid") or request.GET.get("oid")
     amt = request.GET.get("amt")
     refId = request.GET.get("refId")
 
@@ -104,10 +165,10 @@ def esewa_success(request):
         order.payment.status = "Success"
         order.payment.esewa_transaction_id = refId
         order.payment.save()
-        return Response({"message": "Payment successful"})
+        return JsonResponse({"message": "Payment successful"})
     else:
-        return Response({"error": "Payment verification failed"}, status=400)
+        return JsonResponse({"error": "Payment verification failed"}, status=400)
+
 
 def esewa_failure(request):
-    return Response({"error": "Payment failed"}, status=400)
-       
+    return JsonResponse({"error": "Payment failed"}, status=400)
