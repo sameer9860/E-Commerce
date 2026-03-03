@@ -9,11 +9,7 @@ router.register(r'orders', OrderViewSet)
 router.register(r'carts', CartViewSet) 
 router.register(r'cart-items', CartItemViewSet)
 
-urlpatterns = router.urls
-
-
-
-urlpatterns = [
+urlpatterns = router.urls + [
     path("payment/<int:order_id>/", initiate_esewa_payment, name="initiate_esewa_payment"),
     path("payment/success/", esewa_success, name="esewa_success"),
     path("payment/failure/", esewa_failure, name="esewa_failure"),
