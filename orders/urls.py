@@ -11,6 +11,6 @@ router.register(r'cart-items', CartItemViewSet)
 
 urlpatterns = router.urls + [
     path("payment/<int:order_id>/", initiate_esewa_payment, name="initiate_esewa_payment"),
-    path("payment/success/", esewa_success, name="esewa_success"),
-    path("payment/failure/", esewa_failure, name="esewa_failure"),
+    path("payment/success/", esewa_success, name="esewa-success"),
+    path("payment/failure/", esewa_failure, name="esewa-failure"),
 ]
