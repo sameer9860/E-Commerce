@@ -7,6 +7,7 @@ class CustomUser(AbstractUser):
         ('customer', 'Customer'),
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='customer')
+    is_approved = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.username} ({self.role})"
