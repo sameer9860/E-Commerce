@@ -4,8 +4,8 @@ import { useState } from "react";
 const NAV_LINKS = [
   { to: "/", label: "Home" },
   { to: "/products", label: "Products" },
-  { to: "/cart", label: "Cart", badge: 2 },
-  { to: "/checkout", label: "Checkout" },
+  { to: "/cart", label: "Cart" },
+  { to: "/customer", label: "My Orders" },
   { to: "/login", label: "Login" },
   { to: "/vendor", label: "Vendor Dashboard" },
 ];
@@ -29,7 +29,7 @@ export default function Navbar() {
           <Link to="/login" className="hover:underline">
             Login
           </Link>
-          <Link to="/signup" className="hover:underline">
+          <Link to="/register" className="hover:underline">
             Sign Up
           </Link>
         </div>
