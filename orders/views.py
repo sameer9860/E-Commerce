@@ -9,8 +9,13 @@ import requests
 from django.http import JsonResponse
 from django.urls import reverse
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncDate
+
+
+
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -193,31 +198,31 @@ class VendorAnalyticsView(APIView):
         )
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def initiate_esewa_payment(request, order_id):
-    if not request.user.is_authenticated:
-        from django.http import HttpResponseForbidden
-        return HttpResponseForbidden("Authentication required")
-
     try:
         order = Order.objects.get(id=order_id, customer=request.user)
     except Order.DoesNotExist:
-        from django.http import HttpResponseNotFound
-        return HttpResponseNotFound("Order not found")
+        return JsonResponse({"error": "Order not found"}, status=404)
 
     if order.status != "Pending":
-        from django.http import HttpResponseBadRequest
-        return HttpResponseBadRequest("Order is not in a payable state")
+        return JsonResponse({"error": "Order is not in a payable state"}, status=400)
 
-    amount = order.product.price * order.quantity
+    amount = float(order.product.price * order.quantity)
 
     Payment.objects.get_or_create(order=order, defaults={"amount": amount})
 
     # eSewa sandbox payment URL from settings
     esewa_url = settings.ESEWA_PAYMENT_URL
 
-    # Build absolute success/failure URLs (pointing to your views)
+    # Build absolute success/failure URLs
     success_url = request.build_absolute_uri(reverse("esewa-success"))
     failure_url = request.build_absolute_uri(reverse("esewa-failure"))
+
+    import time
+    # eSewa requires a unique pid for each transaction in sandbox
+    unique_pid = f"{order.id}-{int(time.time())}"
 
     params = {
         "amt": amount,
@@ -225,41 +230,55 @@ def initiate_esewa_payment(request, order_id):
         "psc": 0,
         "txAmt": 0,
         "tAmt": amount,
-        "pid": str(order.id),
-        "scd": settings.ESEWA_MERCHANT_CODE,  # EPAYTEST in sandbox
+        "pid": unique_pid,
+        "scd": settings.ESEWA_MERCHANT_CODE,
         "su": success_url,
         "fu": failure_url,
     }
 
     query_string = "&".join([f"{k}={v}" for k, v in params.items()])
-    return redirect(f"{esewa_url}?{query_string}")
+    payment_url = f"{esewa_url}?{query_string}"
+    
+    return JsonResponse({"payment_url": payment_url})
 
 
 
 def esewa_success(request):
-    oid = request.GET.get("pid") or request.GET.get("oid")
+    pid = request.GET.get("pid") or request.GET.get("oid")
     amt = request.GET.get("amt")
     refId = request.GET.get("refId")
+
+    if not pid:
+        return JsonResponse({"error": "Missing pid"}, status=400)
+
+    # Extract original order ID
+    order_id = pid.split('-')[0]
 
     data = {
         "amt": amt,
         "scd": settings.ESEWA_MERCHANT_CODE,
-        "pid": oid,
+        "pid": pid,
         "rid": refId,
     }
 
-    response = requests.post(settings.ESEWA_VERIFY_URL, data=data)
-
-    if "Success" in response.text:
-        order = Order.objects.get(id=oid)
-        order.status = "Confirmed"
-        order.save()
-        order.payment.status = "Success"
-        order.payment.esewa_transaction_id = refId
-        order.payment.save()
-        return JsonResponse({"message": "Payment successful"})
-    else:
-        return JsonResponse({"error": "Payment verification failed"}, status=400)
+    try:
+        response = requests.post(settings.ESEWA_VERIFY_URL, data=data)
+        # eSewa V1 returns XML. Check for "Success" status.
+        if "Success" in response.text or "<status>success</status>" in response.text.lower():
+            order = Order.objects.get(id=order_id)
+            order.status = "Confirmed"
+            order.save()
+            
+            payment = order.payment
+            payment.status = "Success"
+            payment.esewa_transaction_id = refId
+            payment.save()
+            return redirect("http://localhost:5173/customer?payment=success")
+        else:
+            return redirect("http://localhost:5173/customer?payment=failed")
+    except Exception:
+        return redirect("http://localhost:5173/customer?payment=error")
+    
 
 def esewa_failure(request):
     return JsonResponse({"message": "Payment failed"}, status=400)
