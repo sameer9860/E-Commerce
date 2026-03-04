@@ -8,6 +8,7 @@ class OrderSerializer(serializers.ModelSerializer):
     )
     customer_username = serializers.CharField(source="customer.username", read_only=True)
     vendor_id = serializers.IntegerField(source="product.vendor_id", read_only=True)
+    product_image = serializers.URLField(source="product.image_url", read_only=True)
 
     payment_status = serializers.SerializerMethodField()
     payment_amount = serializers.SerializerMethodField()
