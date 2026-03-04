@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { FiBox, FiShoppingCart, FiPieChart, FiX } from "react-icons/fi";
+import Sidebar from "../components/Sidebar";
 import API from "../api";
 
 export default function VendorDashboard() {
@@ -10,28 +13,39 @@ export default function VendorDashboard() {
     description: "",
     price: "",
     stock: "",
+    image: null,
   });
   const [orders, setOrders] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [approved, setApproved] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [me, setMe] = useState(null);
   const navigate = useNavigate();
+
+  const menuItems = [
+    { id: "products", label: "My Products", icon: FiBox },
+    { id: "orders", label: "Customer Orders", icon: FiShoppingCart },
+    { id: "analytics", label: "Sales Analytics", icon: FiPieChart },
+  ];
 
   // Guard: only allow logged-in vendors
   useEffect(() => {
     const checkRoleAndLoad = async () => {
       try {
-        const me = await API.get("me/");
-        if (me.data.role !== "vendor") {
-          alert("You must be logged in as a vendor to access the Vendor Dashboard.");
+        const meRes = await API.get("me/");
+        if (meRes.data.role !== "vendor") {
+          toast.error(
+            "You must be logged in as a vendor to access the Vendor Dashboard.",
+          );
           navigate("/login");
           return;
         }
-        setApproved(!!me.data.is_approved);
+        setApproved(!!meRes.data.is_approved);
+        setMe(meRes.data);
         const res = await API.get("products/");
         setProducts(res.data);
       } catch {
-        alert("Please log in as a vendor to access this page.");
+        toast.error("Please log in as a vendor to access this page.");
         navigate("/login");
       } finally {
         setLoading(false);
@@ -53,72 +67,88 @@ export default function VendorDashboard() {
 
   const handleAddProduct = async () => {
     try {
-      await API.post("products/", newProduct);
-      alert("Product added successfully!");
-      setNewProduct({ name: "", description: "", price: "", stock: "" });
+      const formData = new FormData();
+      formData.append("name", newProduct.name);
+      formData.append("description", newProduct.description);
+      formData.append("price", newProduct.price);
+      formData.append("stock", newProduct.stock);
+      if (newProduct.image) {
+        formData.append("image", newProduct.image);
+      }
+      await API.post("products/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      toast.success("Product added successfully!");
+      setNewProduct({
+        name: "",
+        description: "",
+        price: "",
+        stock: "",
+        image: null,
+      });
       const res = await API.get("products/");
       setProducts(res.data);
     } catch (err) {
-      alert(err?.response?.data?.detail || "Failed to add product.");
+      toast.error(err?.response?.data?.detail || "Failed to add product.");
     }
   };
 
   const handleDeleteProduct = async (id) => {
-    await API.delete(`products/${id}/`);
-    setProducts(products.filter((p) => p.id !== id));
+    try {
+      await API.delete(`products/${id}/`);
+      setProducts(products.filter((p) => p.id !== id));
+      toast.success("Product deleted.");
+    } catch {
+      toast.error("Failed to delete product.");
+    }
   };
 
   const updateOrderStatus = async (id, status) => {
     try {
       await API.patch(`orders/${id}/`, { status });
       setOrders((prev) =>
-        prev.map((o) => (o.id === id ? { ...o, status } : o))
+        prev.map((o) => (o.id === id ? { ...o, status } : o)),
       );
+      toast.success(`Order status updated to ${status}`);
     } catch {
-      alert("Failed to update order status.");
+      toast.error("Failed to update order status.");
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-gray-600">Loading vendor dashboard...</p>
+      <div className="min-h-screen bg-[#eff0f5] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-[#f85606] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-600 font-medium">
+            Loading vendor dashboard...
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <aside className="w-64 bg-blue-700 text-white fixed top-16 left-0 h-full shadow-lg">
-        <div className="p-6 font-bold text-xl border-b border-blue-500">Vendor Panel</div>
-        <ul className="space-y-4 p-6">
-          <li>
-            <button onClick={() => setActiveTab("products")} className="w-full text-left hover:underline">
-              Products
-            </button>
-          </li>
-          <li>
-            <button onClick={() => setActiveTab("orders")} className="w-full text-left hover:underline">
-              Orders
-            </button>
-          </li>
-          <li>
-            <button onClick={() => setActiveTab("analytics")} className="w-full text-left hover:underline">
-              Analytics
-            </button>
-          </li>
-        </ul>
-      </aside>
+    <div className="min-h-screen bg-[#eff0f5]">
+      <Sidebar
+        title="Vendor Dashboard"
+        menuItems={menuItems}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        username={me?.username}
+        role={me?.role}
+      />
 
       {/* Main Content */}
-      <main className="flex-1 ml-64 p-8">
+      <main className="lg:ml-72 p-6 lg:p-10">
         {activeTab === "products" && (
           <div>
             <h2 className="text-2xl font-bold mb-6">Manage Products</h2>
             {!approved && (
               <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded">
-                Your vendor account is pending approval. You can view the dashboard, but you can’t add/update products until approved by admin.
+                Your vendor account is pending approval. You can view the
+                dashboard, but you can’t add/update products until approved by
+                admin.
               </div>
             )}
 
@@ -129,53 +159,99 @@ export default function VendorDashboard() {
                 type="text"
                 placeholder="Product Name"
                 value={newProduct.name}
-                onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                onChange={(e) =>
+                  setNewProduct({ ...newProduct, name: e.target.value })
+                }
                 className="w-full p-2 border rounded mb-2"
               />
               <textarea
                 placeholder="Description"
                 value={newProduct.description}
-                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                onChange={(e) =>
+                  setNewProduct({ ...newProduct, description: e.target.value })
+                }
                 className="w-full p-2 border rounded mb-2"
               />
               <input
                 type="number"
                 placeholder="Price"
                 value={newProduct.price}
-                onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                onChange={(e) =>
+                  setNewProduct({ ...newProduct, price: e.target.value })
+                }
                 className="w-full p-2 border rounded mb-2"
               />
               <input
                 type="number"
                 placeholder="Stock"
                 value={newProduct.stock}
-                onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-                className="w-full p-2 border rounded mb-2"
+                onChange={(e) =>
+                  setNewProduct({ ...newProduct, stock: e.target.value })
+                }
+                className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-[#f85606] transition-all mb-4"
+              />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setNewProduct({ ...newProduct, image: e.target.files[0] })
+                }
+                className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-[#f85606] transition-all mb-6 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#f85606]/10 file:text-[#f85606] hover:file:bg-[#f85606]/20 cursor-pointer"
               />
               <button
                 onClick={handleAddProduct}
                 disabled={!approved}
-                className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
+                className="w-full bg-green-500 text-white font-bold py-3.5 rounded-xl hover:bg-green-600 transition-all shadow-lg shadow-green-500/20 uppercase tracking-wider text-sm disabled:opacity-50"
               >
-                Add Product
+                Create Product
               </button>
             </div>
 
             {/* Product List */}
-            <h3 className="text-xl font-semibold mb-4">My Products</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <h3 className="text-xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+              <FiBox className="text-[#f85606]" /> My Products
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {products.map((p) => (
-                <div key={p.id} className="bg-white shadow-md rounded-lg p-4">
-                  <h4 className="text-lg font-bold">{p.name}</h4>
-                  <p className="text-gray-600">{p.description}</p>
-                  <p className="text-blue-600 font-semibold">Rs. {p.price}</p>
-                  <p className="text-sm text-gray-500">Stock: {p.stock}</p>
-                  <button
-                    onClick={() => handleDeleteProduct(p.id)}
-                    className="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
+                <div
+                  key={p.id}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl transition-all duration-300"
+                >
+                  <div className="h-40 bg-gray-100 relative overflow-hidden">
+                    <img
+                      src={
+                        p.image_display ||
+                        `https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=800&auto=format&fit=crop`
+                      }
+                      alt={p.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  </div>
+                  <div className="p-4 space-y-2">
+                    <h4 className="font-bold text-gray-900 group-hover:text-[#f85606] transition-colors truncate">
+                      {p.name}
+                    </h4>
+                    <p className="text-gray-500 text-xs line-clamp-2 h-8">
+                      {p.description}
+                    </p>
+                    <div className="flex justify-between items-end pt-2">
+                      <div>
+                        <p className="text-[#0a4692] font-black">
+                          Rs. {p.price}
+                        </p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                          Stock: {p.stock}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteProduct(p.id)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete Product"
+                      >
+                        <FiX size={18} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -222,7 +298,7 @@ export default function VendorDashboard() {
                               >
                                 {status}
                               </button>
-                            )
+                            ),
                           )}
                         </td>
                       </tr>
@@ -264,9 +340,9 @@ export default function VendorDashboard() {
                         const revenue = Number(row.revenue || 0);
                         const max = Math.max(
                           ...analytics.revenue_by_product.map((r) =>
-                            Number(r.revenue || 0)
+                            Number(r.revenue || 0),
                           ),
-                          1
+                          1,
                         );
                         const pct = Math.round((revenue / max) * 100);
                         return (
@@ -275,7 +351,9 @@ export default function VendorDashboard() {
                               <span className="text-gray-800">
                                 {row.order__product__name}
                               </span>
-                              <span className="font-semibold">Rs. {row.revenue}</span>
+                              <span className="font-semibold">
+                                Rs. {row.revenue}
+                              </span>
                             </div>
                             <div className="h-2 bg-gray-200 rounded">
                               <div
