@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import API from "../api";
 
 export default function ProductList() {
   const [products, setProducts] = useState([]);
   const [addingId, setAddingId] = useState(null);
   const [me, setMe] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    API.get("products/").then((res) => setProducts(res.data));
+    // Products are always public
+    API.get("products/")
+      .then((res) => setProducts(res.data))
+      .catch(() => {});
+    // Try to load user (will silently fail if not logged in)
     API.get("me/")
       .then((res) => setMe(res.data))
       .catch(() => setMe(null));
@@ -26,17 +32,22 @@ export default function ProductList() {
   };
 
   const handleAddToCart = async (productId) => {
-    if (!me || me.role !== "customer") {
-      alert("Please login as a customer to add items to cart.");
+    if (!me) {
+      toast.error("Please log in to add items to your cart.");
+      navigate("/login");
+      return;
+    }
+    if (me.role !== "customer") {
+      toast.error("Only customers can add items to cart.");
       return;
     }
     setAddingId(productId);
     await ensureCartExists();
     try {
       await API.post("cart-items/", { product: productId, quantity: 1 });
-      alert("Added to cart");
+      toast.success("Added to cart");
     } catch {
-      alert("Could not add to cart. Make sure you are logged in as a customer.");
+      toast.error("Could not add to cart.");
     } finally {
       setAddingId(null);
     }
@@ -56,10 +67,22 @@ export default function ProductList() {
               className="bg-white text-gray-900 overflow-hidden hover:shadow-xl transition-shadow group"
             >
               <Link to={`/products/${p.id}`}>
-                <div className="h-48 bg-gray-100 flex items-center justify-center p-4">
-                  <span className="text-4xl group-hover:scale-110 transition-transform">
-                    📦
-                  </span>
+                <div className="h-48 bg-gray-100 flex items-center justify-center relative overflow-hidden group">
+                  <img
+                    src={
+                      p.image_display ||
+                      `https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=800&auto=format&fit=crop`
+                    }
+                    alt={p.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  {!p.image_display && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/5 backdrop-blur-[2px]">
+                      <span className="text-4xl text-white/50 drop-shadow-lg">
+                        📦
+                      </span>
+                    </div>
+                  )}
                 </div>
               </Link>
 
@@ -102,4 +125,3 @@ export default function ProductList() {
     </div>
   );
 }
-
