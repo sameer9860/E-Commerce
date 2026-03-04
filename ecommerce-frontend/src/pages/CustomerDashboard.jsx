@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { FiShoppingCart, FiPieChart } from "react-icons/fi";
+import Sidebar from "../components/Sidebar";
 import API from "../api";
 
 export default function CustomerDashboard() {
@@ -7,28 +10,37 @@ export default function CustomerDashboard() {
   const [orders, setOrders] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [me, setMe] = useState(null);
   const navigate = useNavigate();
+
+  const menuItems = [
+    { id: "orders", label: "My Orders", icon: FiShoppingCart },
+    { id: "payments", label: "Payment History", icon: FiPieChart },
+  ];
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("payment") === "success") {
-      alert("Payment successful! Your order has been confirmed.");
+      toast.success("Payment successful! Your order has been confirmed.");
     } else if (params.get("payment") === "failed") {
-      alert("Payment failed. Please try again.");
+      toast.error("Payment failed. Please try again.");
     }
 
     const load = async () => {
       try {
-        const me = await API.get("me/");
-        if (me.data.role !== "customer") {
-          alert("You must be logged in as a customer to view your dashboard.");
+        const user = await API.get("me/");
+        if (user.data.role !== "customer") {
+          toast.error(
+            "You must be logged in as a customer to view your dashboard.",
+          );
           navigate("/login");
           return;
         }
+        setMe(user.data);
         const res = await API.get("orders/");
         setOrders(res.data);
       } catch {
-        alert("Please log in as a customer to view your dashboard.");
+        toast.error("Please log in as a customer to view your dashboard.");
         navigate("/login");
       } finally {
         setLoading(false);
@@ -48,42 +60,26 @@ export default function CustomerDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#eff0f5] flex items-center justify-center p-6">
-        <p className="text-gray-600">Loading your orders...</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-[#f85606] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-600 font-medium">Loading your orders...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#eff0f5] flex items-center justify-center p-6">
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-4xl space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Customer Dashboard
-          </h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setActiveTab("orders")}
-              className={`px-4 py-2 rounded ${
-                activeTab === "orders"
-                  ? "bg-[#f85606] text-white"
-                  : "bg-gray-100 text-gray-700"
-              }`}
-            >
-              Orders
-            </button>
-            <button
-              onClick={() => setActiveTab("payments")}
-              className={`px-4 py-2 rounded ${
-                activeTab === "payments"
-                  ? "bg-[#f85606] text-white"
-                  : "bg-gray-100 text-gray-700"
-              }`}
-            >
-              Payment History
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#eff0f5]">
+      <Sidebar
+        title="My Dashboard"
+        menuItems={menuItems}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        username={me?.username}
+        role={me?.role}
+      />
 
+      <main className="lg:ml-72 p-6 lg:p-10">
         {activeTab === "orders" && (
           <>
             <h2 className="text-lg font-semibold text-gray-900">My Orders</h2>
@@ -163,7 +159,7 @@ export default function CustomerDashboard() {
             )}
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }
