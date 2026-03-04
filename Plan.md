@@ -131,30 +131,9 @@ Product cards with images.
 
 Sidebar navigation for dashboards.
 
-🟪 Phase 6: Deployment
-Backend
 
-Deploy Django on Render, DigitalOcean, or Heroku.
 
-Use Gunicorn + Nginx.
-
-Configure SSL (HTTPS).
-
-Frontend
-
-Deploy React + Vite on Vercel or Netlify.
-
-Connect to backend API.
-
-Domain
-
-Buy domain (Namecheap, GoDaddy).
-
-Point DNS to hosting provider.
-
-Enable HTTPS.
-
-🟫 Phase 7: Final Touches
+🟫 Phase 6: Final Touches
 Email notifications (order confirmation, shipping updates).
 
 Product search & filters.
