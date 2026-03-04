@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar";
 import ProductList from "./components/ProductList";
 import ProductDetail from "./components/ProductDetail";
@@ -15,6 +16,7 @@ import Profile from "./pages/Profile";
 function App() {
   return (
     <Router>
+      <Toaster position="top-right" reverseOrder={false} />
       <Navbar />
       {/* Updated main container with dark background and padding for fixed navbar */}
       <div className="pt-24 min-h-screen bg-[#eff0f5] text-gray-900">
