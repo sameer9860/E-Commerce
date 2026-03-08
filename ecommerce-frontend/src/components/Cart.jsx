@@ -21,8 +21,8 @@ export default function Cart() {
         const enriched = await Promise.all(
           cart.items.map(async (item) => {
             const productRes = await API.get(`products/${item.product}/`);
-            return { ...item, productDetail: productRes.data };
-          })
+            return { ...item, productDetail: productRes.data, included: true };
+          }),
         );
         setItems(enriched);
       } catch {
@@ -40,15 +40,49 @@ export default function Cart() {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
+  const handleQuantityChange = async (id, delta) => {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
+
+    const newQty = item.quantity + delta;
+    if (newQty < 1) {
+      await handleRemove(id);
+      return;
+    }
+
+    // optimistic update
+    setItems((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, quantity: newQty } : i)),
+    );
+
+    try {
+      await API.patch(`cart-items/${id}/`, { quantity: newQty });
+    } catch {
+      // revert on error
+      setItems((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, quantity: item.quantity } : i)),
+      );
+      alert("Could not update quantity. Please try again.");
+    }
+  };
+
   const total = items.reduce(
-    (sum, item) => sum + Number(item.productDetail.price) * item.quantity,
-    0
+    (sum, item) =>
+      item.included === false
+        ? sum
+        : sum + Number(item.productDetail.price) * item.quantity,
+    0,
   );
 
   const handleCheckout = async () => {
     if (items.length === 0) return;
+    const includedItems = items.filter((i) => i.included !== false);
+    if (includedItems.length === 0) {
+      alert("Please include at least one item to proceed to checkout.");
+      return;
+    }
     setCheckingOut(true);
-    const first = items[0];
+    const first = includedItems[0];
     try {
       const res = await API.post("orders/", {
         product: first.product,
@@ -101,16 +135,58 @@ export default function Cart() {
               className="py-4 flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-100 flex items-center justify-center rounded">
-                  <span className="text-2xl">📦</span>
+                {items.length > 1 && (
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 accent-[#f85606]"
+                    checked={item.included !== false}
+                    onChange={(e) =>
+                      setItems((prev) =>
+                        prev.map((i) =>
+                          i.id === item.id
+                            ? { ...i, included: e.target.checked }
+                            : i,
+                        ),
+                      )
+                    }
+                  />
+                )}
+                <div className="w-12 h-12 bg-gray-100 flex items-center justify-center rounded overflow-hidden">
+                  <img
+                    src={
+                      item.productDetail.image_display ||
+                      `https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=800&auto=format&fit=crop`
+                    }
+                    alt={item.productDetail.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div>
                   <p className="font-semibold text-gray-800">
                     {item.productDetail.name}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    Qty: {item.quantity} · Rs. {item.productDetail.price}
-                  </p>
+                  <div className="mt-1 flex items-center gap-3 text-sm text-gray-500">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleQuantityChange(item.id, -1)}
+                        className="w-7 h-7 flex items-center justify-center rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100"
+                      >
+                        −
+                      </button>
+                      <span className="min-w-[2rem] text-center font-semibold">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => handleQuantityChange(item.id, 1)}
+                        className="w-7 h-7 flex items-center justify-center rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      Rs. {item.productDetail.price} each
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="text-right">
