@@ -10,11 +10,21 @@ const Sidebar = ({
   title,
   username,
   role,
+  onProfileClick,
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const navigate = useNavigate();
 
   const toggleSidebar = () => setIsOpen(!isOpen);
+
+  const handleProfileClick = () => {
+    if (onProfileClick) {
+      onProfileClick();
+      if (window.innerWidth < 1024) setIsOpen(false);
+    } else {
+      navigate("/profile");
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -105,7 +115,7 @@ const Sidebar = ({
 
             {/* Profile Button */}
             <button
-              onClick={() => navigate("/profile")}
+              onClick={handleProfileClick}
               className="w-full py-2.5 px-4 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
             >
               <FiUser size={13} /> My Profile
