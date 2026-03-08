@@ -48,11 +48,14 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         order = serializer.save(customer=user)
 
-        # create payment
-        Payment.objects.create(
+        # create initial payment record in Pending state.
+        # It will move through: Pending -> Initiated -> Success/Cancelled
+        Payment.objects.get_or_create(
             order=order,
-            amount=order.product.price * qty,
-            status="Success",
+            defaults={
+                "amount": order.product.price * qty,
+                "status": "Pending",
+            },
         )
 
         # deduct inventory
@@ -211,7 +214,13 @@ def initiate_esewa_payment(request, order_id):
 
     amount = float(order.product.price * order.quantity)
 
-    Payment.objects.get_or_create(order=order, defaults={"amount": amount})
+    # Ensure a payment record exists and mark it as Initiated
+    payment, _created = Payment.objects.get_or_create(
+        order=order, defaults={"amount": amount}
+    )
+    payment.amount = amount
+    payment.status = "Initiated"
+    payment.save()
 
     # eSewa sandbox payment URL from settings
     esewa_url = settings.ESEWA_PAYMENT_URL
@@ -268,17 +277,47 @@ def esewa_success(request):
             order = Order.objects.get(id=order_id)
             order.status = "Confirmed"
             order.save()
-            
+
             payment = order.payment
+            # Mark as Success only when we have a valid transaction ID
             payment.status = "Success"
             payment.esewa_transaction_id = refId
             payment.save()
             return redirect("http://localhost:5173/customer?payment=success")
         else:
+            # Verification failed – treat as cancelled in our system
+            try:
+                order = Order.objects.get(id=order_id)
+                order.status = "Cancelled"
+                order.save()
+                if hasattr(order, "payment"):
+                    payment = order.payment
+                    payment.status = "Cancelled"
+                    payment.save()
+            except Order.DoesNotExist:
+                pass
             return redirect("http://localhost:5173/customer?payment=failed")
     except Exception:
         return redirect("http://localhost:5173/customer?payment=error")
     
 
 def esewa_failure(request):
-    return JsonResponse({"message": "Payment failed"}, status=400)
+    """
+    Called by eSewa when the user cancels or the payment fails.
+    We treat this as a Cancelled payment in our system.
+    """
+    pid = request.GET.get("pid") or request.GET.get("oid")
+    if pid:
+        order_id = pid.split("-")[0]
+        try:
+            order = Order.objects.get(id=order_id)
+            order.status = "Cancelled"
+            order.save()
+            if hasattr(order, "payment"):
+                payment = order.payment
+                payment.status = "Cancelled"
+                payment.save()
+        except Order.DoesNotExist:
+            pass
+
+    return redirect("http://localhost:5173/customer?payment=failed")
