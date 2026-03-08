@@ -34,22 +34,19 @@ export default function Navbar() {
       ];
     }
 
-    const authLinks = [{ to: "/profile", label: "Profile" }];
-
     if (me.is_staff || me.is_superuser) {
-      return [...base, { to: "/admin-dashboard", label: "Admin Dashboard" }, ...authLinks];
+      return [...base, { to: "/admin-dashboard", label: "Admin Dashboard" }];
     }
     if (me.role === "vendor") {
-      return [...base, { to: "/vendor", label: "Vendor Dashboard" }, ...authLinks];
+      return [...base, { to: "/vendor", label: "Vendor Dashboard" }];
     }
-    return [...base, { to: "/cart", label: "Cart" }, { to: "/customer", label: "My Orders" }, ...authLinks];
+    // customers
+    return [
+      ...base,
+      { to: "/cart", label: "Cart" },
+      { to: "/customer", label: "My Dashboard" },
+    ];
   }, [me]);
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    setMe(null);
-    navigate("/login");
-  };
 
   return (
     <nav className="fixed top-0 left-0 w-full bg-[#0a4692] shadow-md z-50">
@@ -60,17 +57,23 @@ export default function Navbar() {
             Save More on App
           </span>
           <span className="hover:underline cursor-pointer">Help & Support</span>
-          {!me ? (
+          {!me && (
             <>
-              <Link to="/login" className="hover:underline">Customer Login</Link>
-              <Link to="/vendor-login" className="hover:underline">Vendor Login</Link>
-              <Link to="/register" className="hover:underline">Sign Up</Link>
+              <Link to="/login" className="hover:underline">
+                Customer Login
+              </Link>
+              <Link to="/vendor-login" className="hover:underline">
+                Vendor Login
+              </Link>
+              <Link to="/register" className="hover:underline">
+                Sign Up
+              </Link>
             </>
-          ) : (
-            <>
-              <Link to="/profile" className="hover:underline">Profile</Link>
-              <button onClick={logout} className="hover:underline">Logout</button>
-            </>
+          )}
+          {me?.role === "customer" && (
+            <Link to="/customer" className="hover:underline">
+              My Dashboard
+            </Link>
           )}
         </div>
       </div>
@@ -135,17 +138,6 @@ export default function Navbar() {
               {label}
             </Link>
           ))}
-          {me && (
-            <button
-              onClick={() => {
-                setOpen(false);
-                logout();
-              }}
-              className="text-left font-medium hover:opacity-80"
-            >
-              Logout
-            </button>
-          )}
         </div>
       )}
     </nav>
